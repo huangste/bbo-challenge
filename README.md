@@ -70,3 +70,45 @@ Rather than selecting a single model manually, I use DBSCAN clustering to identi
 I also introduced Automatic Relevance Determination (ARD) diagnostics to identify which dimensions appear influential. For example, some functions appear to depend heavily on one or two dimensions, while others exhibit more balanced behaviour across all dimensions. Although ARD is not used directly for candidate selection, it provides useful interpretability and helps identify potentially irrelevant dimensions.
 
 This workflow balances robustness and performance by combining Bayesian optimisation, ensemble agreement and feature-relevance diagnostics rather than relying on a single model configuration.
+### Week 4
+
+Week 4 focused on testing alternative exploration mechanisms and introducing neural-network diagnostics.
+
+#### Thompson Sampling
+
+In addition to EI and UCB, I implemented Thompson Sampling as an alternative acquisition strategy. Unlike EI and UCB, which optimise a deterministic acquisition function, Thompson Sampling draws a sample from the Gaussian Process posterior and selects candidates that appear optimal under that sampled function. This naturally encourages exploration in regions where uncertainty remains high.
+
+Interestingly, Thompson Sampling was selected by the ensemble framework for Function 3, one of the most uncertain functions in the challenge. This result was consistent with other diagnostics, suggesting that Function 3 remains poorly understood and may benefit from additional exploration rather than aggressive exploitation.
+
+#### Function 1: Problem Interpretation
+
+Week 4 also highlighted the importance of understanding the problem description rather than relying solely on model outputs.
+
+Function 1 was described as a radiation-detection problem where only proximity to a contamination source generates a meaningful signal. This interpretation suggests a highly localised response surface rather than a smooth global optimisation problem. As a result, I modified the search strategy from broad exploration toward local exploitation around the strongest observed signal region. The Gaussian Process length scales and observed outputs were consistent with this interpretation.
+
+#### Neural-Network Diagnostics
+
+I introduced a TensorFlow/Keras neural network as a diagnostic tool rather than a replacement for Bayesian Optimisation. The network used two hidden layers with ReLU activations and a sigmoid output layer. Hyperparameters included hidden-unit sizes of 8 and 16, learning rates of 0.01 and 0.05, and early stopping with a maximum of 75 epochs.
+
+To evaluate separability, I converted each optimisation problem into a binary classification task by labelling the top 25% of observed outputs as "good" and the remaining observations as "bad".
+
+The results revealed significant differences between functions:
+
+* Functions 5 and 8 achieved strong classification performance and low validation loss, suggesting clear decision boundaries and concentrated high-performance regions.
+* Functions 6 and 7 showed moderate classification performance but displayed increasing validation loss despite falling training loss, indicating mild overfitting.
+* Function 3 performed poorly, with classification performance close to random guessing and clear signs of overfitting. This result independently supported the Thompson Sampling recommendation that additional exploration may be required.
+
+The convergence behaviour of Functions 3, 6 and 7 proved particularly informative. In all three cases, training loss continued to decrease while validation loss eventually deteriorated, suggesting that model uncertainty remains significant despite increasing model complexity.
+
+#### Current Framework
+
+The current workflow combines:
+
+* Gaussian Process surrogate models
+* Matérn and RBF kernel ensembles
+* EI, UCB and Thompson Sampling acquisition strategies
+* DBSCAN consensus clustering
+* ARD feature-relevance diagnostics
+* Neural-network separability diagnostics
+
+The neural network is not currently used for query generation. Instead, it serves as an independent diagnostic tool to assess whether meaningful structure exists within each optimisation problem and to cross-check conclusions drawn from the Bayesian Optimisation framework.
