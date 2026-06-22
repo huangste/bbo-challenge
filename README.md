@@ -108,6 +108,21 @@ The current workflow combines:
 * Matérn and RBF kernel ensembles
 * EI, UCB and Thompson Sampling acquisition strategies
 * DBSCAN consensus clustering
+
+## Week 5 Update – Neural Network Experiments
+
+This week I extended the optimisation framework with two neural-network components.
+
+First, I added a PyTorch surrogate model that directly approximates each black-box function using the accumulated observations. After training, gradient-based optimisation was performed on the network inputs to identify candidate query locations. Validation loss was tracked separately from training loss to assess potential overfitting.
+
+Second, I expanded the TensorFlow/Keras diagnostic classifier by introducing an additional hidden layer. The classifier labels the top 25% of observed outcomes as “high-performing” regions and evaluates whether a neural network can distinguish promising areas of the search space. I compared one-hidden-layer and two-hidden-layer architectures using validation loss and AUC metrics.
+
+Several observations emerged from these experiments. In a number of functions, adding a second hidden layer improved validation performance, suggesting that some non-linear structure exists in the accumulated observations. However, the benefits were inconsistent across functions, highlighting the trade-off between model complexity and limited data availability.
+
+The PyTorch surrogate also revealed an important behaviour: when trained on small datasets, neural networks frequently pushed candidate solutions towards boundary values (0 or 1). This behaviour proved highly successful for Function 5, where both the neural-network surrogate and the Gaussian-process framework pointed towards the upper corner of the search space, resulting in a substantial improvement in the objective value. In contrast, Function 8 demonstrated that strong neural-network confidence does not necessarily translate into better optimisation performance, as boundary-seeking behaviour did not improve upon the current best result.
+
+Overall, these experiments suggest that neural networks are currently more useful as diagnostic and exploratory tools than as primary optimisation engines. Gaussian-process models remain the main optimisation framework, while neural networks provide additional insight into non-linear structure, separability, and potential overfitting.
+
 * ARD feature-relevance diagnostics
 * Neural-network separability diagnostics
 
