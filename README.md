@@ -123,6 +123,127 @@ The PyTorch surrogate also revealed an important behaviour: when trained on smal
 
 Overall, these experiments suggest that neural networks are currently more useful as diagnostic and exploratory tools than as primary optimisation engines. Gaussian-process models remain the main optimisation framework, while neural networks provide additional insight into non-linear structure, separability, and potential overfitting.
 
+Week 6 – Comparing Bayesian Optimisation with Neural Network Surrogates
+Overview
+
+This week focused on evaluating whether deep learning could improve the surrogate modelling stage of the Black-Box Optimisation (BBO) workflow. Rather than replacing the Gaussian Process (GP), the objective was to understand the strengths and limitations of neural networks under extremely small datasets (15–45 observations).
+
+Three complementary surrogate approaches were compared:
+
+Gaussian Process (scikit-learn): primary optimisation model using Matérn/RBF kernels, ARD, and acquisition functions (Expected Improvement, UCB and Thompson Sampling).
+PyTorch Fully Connected Neural Network: regression surrogate followed by gradient-based input optimisation.
+PyTorch Conv1D Neural Network: a toy CNN implemented to investigate whether convolutional feature extraction benefits low-dimensional optimisation.
+TensorFlow/Keras Classifier: diagnostic model that classified the top 25% of observations as "high-performance" regions to evaluate whether a meaningful decision boundary existed.
+New work completed
+1. PyTorch Conv1D surrogate
+
+A small Conv1D regression network was implemented:
+
+Conv1D
+ ↓
+ReLU
+ ↓
+Flatten
+ ↓
+Linear
+ ↓
+ReLU
+ ↓
+Linear(1)
+
+The trained network was then optimised directly with gradient ascent, following the same optimisation pipeline used for the fully connected surrogate.
+
+This provided a direct comparison between fully connected neural networks and convolutional networks while keeping the optimisation framework unchanged.
+
+2. Comparison of three surrogate models
+
+For every function we compared
+
+GP candidate
+Fully Connected NN candidate
+CNN candidate
+
+The CNN consistently pushed candidate solutions more aggressively towards the boundaries of the search space (0 or 1), often more aggressively than the fully connected network.
+
+This behaviour reflects the mismatch between convolutional inductive biases and the BBO problem. Unlike images, optimisation variables have no natural spatial ordering, so local convolutional filters provide little meaningful structure.
+
+3. Improved neural-network diagnostics
+
+The Keras classifier was extended with
+
+validation loss
+best validation loss
+validation accuracy
+validation AUC
+
+This allowed the neural network to be used as a diagnostic tool rather than simply an optimiser.
+
+Key observations
+
+Several interesting patterns emerged.
+
+Neural networks naturally extrapolate to boundaries
+
+Both the fully connected network and the CNN frequently produced candidate points close to 0 or 1.
+
+The CNN exhibited this behaviour even more strongly than the fully connected model, suggesting that convolution increases extrapolation when only a handful of observations are available.
+
+CNN did not improve optimisation
+
+Although CNNs are extremely successful in computer vision, they did not provide better optimisation candidates for this problem.
+
+This is expected because convolution assumes neighbouring inputs share local structure, whereas the optimisation variables in the BBO challenge are independent design variables.
+
+The CNN therefore served primarily as a learning exercise and diagnostic comparison.
+
+Bayesian Optimisation behaves fundamentally differently
+
+The most important observation came from Function 3.
+
+Both neural-network approaches performed poorly:
+
+poor regression fit
+poor classifier performance (validation accuracy ≈20%)
+no clear high-performing region
+
+Yet the Gaussian Process produced the largest improvement obtained so far.
+
+This illustrates an important distinction.
+
+Neural networks estimate only the function value,
+
+x→
+y
+^
+	​
+
+
+whereas Gaussian Processes estimate both
+
+μ(x),σ(x)
+
+allowing the acquisition function to balance exploitation and exploration.
+
+Consequently,
+
+a poor mean estimate combined with a good uncertainty estimate can still generate excellent optimisation decisions.
+
+This was the clearest conceptual lesson from this iteration.
+
+Current optimisation philosophy
+
+After six rounds, the optimisation strategy has become clearer.
+
+The Gaussian Process remains the primary optimisation engine because Bayesian Optimisation is fundamentally a stochastic optimisation framework designed for extremely small datasets.
+
+Neural networks remain valuable as diagnostic tools:
+
+PyTorch regression models reveal the geometry implied by deterministic function approximation.
+TensorFlow/Keras classifiers evaluate whether a stable high-performance region exists.
+CNN experiments demonstrate why convolutional architectures are unsuitable for unordered optimisation variables.
+
+Rather than replacing the Gaussian Process, these models improve understanding of the optimisation landscape while the GP continues to make the final query decisions through its explicit uncertainty modelling.
+
 * ARD feature-relevance diagnostics
 * Neural-network separability diagnostics
 
